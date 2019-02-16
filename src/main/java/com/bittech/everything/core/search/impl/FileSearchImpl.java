@@ -5,6 +5,7 @@ import com.bittech.everything.core.model.Condition;
 import com.bittech.everything.core.model.Thing;
 import com.bittech.everything.core.search.FileSearch;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,6 +24,9 @@ public class FileSearchImpl implements FileSearch {
     
     @Override
     public List<Thing> search(Condition condition) {
+        if (condition == null) {
+            return new ArrayList<>();
+        }
         return this.fileIndexDao.search(condition);
     }
 }

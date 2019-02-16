@@ -22,6 +22,13 @@ public interface FileIndexDao {
     void insert(Thing thing);
     
     /**
+     * 删除数据Thing
+     *
+     * @param thing
+     */
+    void delete(Thing thing);
+    
+    /**
      * 根据condition条件进行数据库的检索
      *
      * @param condition

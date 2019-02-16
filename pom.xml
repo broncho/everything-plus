@@ -11,8 +11,10 @@
     <packaging>jar</packaging>
     <!--项目名称-->
     <name>everything-plus</name>
+
     <!--项目描述-->
     <description>这是一个很不错的Everything的Java版工具</description>
+
     <!--开发者信息-->
     <developers>
         <developer>

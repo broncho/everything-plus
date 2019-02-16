@@ -6,19 +6,24 @@ import com.bittech.everything.core.dao.FileIndexDao;
 import com.bittech.everything.core.dao.impl.FileIndexDaoImpl;
 import com.bittech.everything.core.index.FileScan;
 import com.bittech.everything.core.index.impl.FileScanImpl;
+import com.bittech.everything.core.interceptor.impl.FileIndexInterceptor;
+import com.bittech.everything.core.interceptor.impl.ThingClearInterceptor;
 import com.bittech.everything.core.model.Condition;
 import com.bittech.everything.core.model.Thing;
 import com.bittech.everything.core.search.FileSearch;
 import com.bittech.everything.core.search.impl.FileSearchImpl;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * Author: secondriver
@@ -35,6 +40,13 @@ public final class EverythingPlusManager {
     
     private ExecutorService executorService;
     
+    /**
+     * 清理删除的文件
+     */
+    private ThingClearInterceptor thingClearInterceptor;
+    private Thread backgroundClearThread;
+    private AtomicBoolean backgroundClearThreadStatus = new AtomicBoolean(false);
+    
     private EverythingPlusManager() {
         this.initComponent();
     }
@@ -42,10 +54,32 @@ public final class EverythingPlusManager {
     private void initComponent() {
         //数据源对象
         DataSource dataSource = DataSourceFactory.dataSource();
+        
+        //检查数据库
+        checkDatabase();
+        
         //业务层的对象
         FileIndexDao fileIndexDao = new FileIndexDaoImpl(dataSource);
+        
         this.fileSearch = new FileSearchImpl(fileIndexDao);
+        
         this.fileScan = new FileScanImpl();
+        //发布代码的时候是不需要的
+//        this.fileScan.interceptor(new FilePrintInterceptor());
+        this.fileScan.interceptor(new FileIndexInterceptor(fileIndexDao));
+        
+        this.thingClearInterceptor = new ThingClearInterceptor(fileIndexDao);
+        this.backgroundClearThread = new Thread(this.thingClearInterceptor);
+        this.backgroundClearThread.setName("Thread-Thing-Clear");
+        this.backgroundClearThread.setDaemon(true);
+    }
+    
+    private void checkDatabase() {
+        String fileName = EverythingPlusConfig.getInstance().getH2IndexPath() + ".mv.db";
+        File dbFile = new File(fileName);
+        if (dbFile.isFile() && !dbFile.exists()) {
+            DataSourceFactory.initDatabase();
+        }
     }
     
     public static EverythingPlusManager getInstance() {
@@ -64,8 +98,20 @@ public final class EverythingPlusManager {
      * 检索
      */
     public List<Thing> search(Condition condition) {
-        //NOTICE 扩展
-        return this.fileSearch.search(condition);
+        //Stream 流式处理 JDK8
+        return this.fileSearch.search(condition)
+                .stream()
+                .filter(thing -> {
+                    String path = thing.getPath();
+                    File f = new File(path);
+                    boolean flag = f.exists();
+                    if (!flag) {
+                        //做删除
+                        thingClearInterceptor.apply(thing);
+                    }
+                    return flag;
+                    
+                }).collect(Collectors.toList());
     }
     
     /**
@@ -88,19 +134,13 @@ public final class EverythingPlusManager {
         final CountDownLatch countDownLatch = new CountDownLatch(directories.size());
         System.out.println("Build index start ....");
         for (String path : directories) {
-            this.executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    EverythingPlusManager.this.fileScan.index(path);
-                    //当前任务完成，值-1
-                    countDownLatch.countDown();
-                }
+            this.executorService.submit(() -> {
+                EverythingPlusManager.this.fileScan.index(path);
+                //当前任务完成，值-1
+                countDownLatch.countDown();
             });
         }
-        
-        /**
-         * 阻塞，直到任务完成，值0
-         */
+        //阻塞，直到任务完成，值0
         try {
             countDownLatch.await();
         } catch (InterruptedException e) {
@@ -108,5 +148,18 @@ public final class EverythingPlusManager {
         }
         System.out.println("Build index complete ...");
     }
+    
+    
+    /**
+     * 启动清理线程
+     */
+    public void startBackgroundClearThread() {
+        if (this.backgroundClearThreadStatus.compareAndSet(false, true)) {
+            this.backgroundClearThread.start();
+        } else {
+            System.out.println("Cant repeat start BackgroundClearThread");
+        }
+    }
+    
 }
 
