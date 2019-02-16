@@ -80,11 +80,16 @@ public class FileIndexDaoImpl implements FileIndexDao {
                         .append("' ");
             }
             //limit, order必选的
-            sqlBuilder.append(" order by depth ")
-                    .append(condition.getOrderByAsc() ? "asc" : "desc")
-                    .append(" limit ")
-                    .append(condition.getLimit())
-                    .append(" offset 0 ");
+            if (condition.getOrderByAsc() != null) {
+                
+                sqlBuilder.append(" order by depth ")
+                        .append(condition.getOrderByAsc() ? "asc" : "desc");
+            }
+            if (condition.getLimit() != null) {
+                sqlBuilder.append(" limit ")
+                        .append(condition.getLimit())
+                        .append(" offset 0 ");
+            }
 
 //            System.out.println(sqlBuilder.toString());
             //3.准备命令

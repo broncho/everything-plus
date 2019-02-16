@@ -28,10 +28,14 @@ public final class FileConvertThing {
     
     private static int computeFileDepth(File file) {
         int dept = 0;
-        
         String[] segments = file.getAbsolutePath().split("\\\\");
         dept = segments.length;
         return dept;
+    }
+    
+    public static void main(String[] args) {
+        System.out.println(computeFileDepth(new File("D:\\a\\b\\c.txt")));
+        System.out.println(computeFileDepth(new File("D:\\a\\c.txt")));
     }
     
     private static FileType computeFileType(File file) {
