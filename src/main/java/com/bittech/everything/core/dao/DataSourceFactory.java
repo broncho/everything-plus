@@ -92,4 +92,25 @@ public class DataSourceFactory {
             e.printStackTrace();
         }
     }
+    
+    
+    public static void main(String[] args) {
+        //演示IO包的读文件
+
+//        try (InputStream in = DataSourceFactory.class.getClassLoader().getResourceAsStream("everything_plus.sql");) {
+////            String sql = IOUtils.toString(in);
+////            System.out.println(sql);
+//            IOUtils.readLines(in)
+//                    .stream()
+//                    .filter(new Predicate<String>() {
+//                        @Override
+//                        public boolean test(String line) {
+//                            return !line.startsWith("--");
+//                        }
+//                    })
+//                    .forEach(line -> System.out.println(line));
+//        } catch (IOException e) {
+//        }
+    
+    }
 }

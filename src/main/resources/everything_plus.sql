@@ -9,3 +9,4 @@ create table if not exists file_index
   depth     int           not null comment '文件路径深度',
   file_type varchar(32)   not null comment '文件类型'
 );
+create index file_name on file_index(name);
