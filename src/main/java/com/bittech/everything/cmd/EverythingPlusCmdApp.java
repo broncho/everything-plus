@@ -1,5 +1,6 @@
 package com.bittech.everything.cmd;
 
+import com.bittech.everything.config.EverythingPlusConfig;
 import com.bittech.everything.core.EverythingPlusManager;
 import com.bittech.everything.core.model.Condition;
 import com.bittech.everything.core.model.Thing;
@@ -18,6 +19,9 @@ public class EverythingPlusCmdApp {
     
     public static void main(String[] args) {
         
+        //解析用户参数
+        parseParams(args);
+        
         //欢迎
         welcome();
         
@@ -30,6 +34,61 @@ public class EverythingPlusCmdApp {
         //交互式
         interactive(manager);
         
+    }
+    
+    private static void parseParams(String[] args) {
+        EverythingPlusConfig config = EverythingPlusConfig.getInstance();
+        /*
+         处理参数：
+         如果用户指定的参数格式不对，使用默认值即可
+         */
+        for (String param : args) {
+            String maxReturnParam = "--maxReturn=";
+            if (param.startsWith(maxReturnParam)) {
+                //--maxReturn=value
+                int index = param.indexOf("=");
+                String maxReturnStr = param.substring(index + 1);
+                try {
+                    int maxReturn = Integer.parseInt(maxReturnStr);
+                    config.setMaxReturn(maxReturn);
+                } catch (NumberFormatException e) {
+                    //如果用户指定的参数格式不对，使用默认值即可
+                }
+            }
+            String deptOrderByAscParam = "--deptOrderByAsc=";
+            if (param.startsWith(deptOrderByAscParam)) {
+                //--deptOrderByAsc=value
+                int index = param.indexOf("=");
+                String deptOrderByAscStr = param.substring(index + 1);
+                config.setDeptOrderAsc(Boolean.parseBoolean(deptOrderByAscStr));
+                
+            }
+            
+            String includePathParam = "--includePath=";
+            if (param.startsWith(includePathParam)) {
+                //--includePath=values (;)
+                int index = param.indexOf("=");
+                String includePathStr = param.substring(index + 1);
+                String[] includePaths = includePathStr.split(";");
+                if (includePaths.length > 0) {
+                    config.getIncludePath().clear();
+                }
+                for (String p : includePaths) {
+                    config.getIncludePath().add(p);
+                }
+            }
+            String excludePathParam = "--excludePath=";
+            if (param.startsWith(includePathParam)) {
+                //--excludePath=values (;)
+                int index = param.indexOf("=");
+                String excludePathStr = param.substring(index + 1);
+                String[] excludePaths = excludePathStr.split(";");
+                config.getExcludePath().clear();
+                for (String p : excludePaths) {
+                    config.getExcludePath().add(p);
+                }
+            }
+        }
     }
     
     private static void interactive(EverythingPlusManager manager) {
@@ -77,6 +136,8 @@ public class EverythingPlusCmdApp {
     
     private static void search(EverythingPlusManager manager, Condition condition) {
         //name fileType limit orderByAsc
+        condition.setLimit(EverythingPlusConfig.getInstance().getMaxReturn());
+        condition.setOrderByAsc(EverythingPlusConfig.getInstance().getDeptOrderAsc());
         List<Thing> thingList = manager.search(condition);
         for (Thing thing : thingList) {
             System.out.println(thing.getPath());

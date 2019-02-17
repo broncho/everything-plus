@@ -55,8 +55,7 @@ public final class EverythingPlusManager {
         //数据源对象
         DataSource dataSource = DataSourceFactory.dataSource();
         
-        //检查数据库
-        checkDatabase();
+        initOrResetDatabase();
         
         //业务层的对象
         FileIndexDao fileIndexDao = new FileIndexDaoImpl(dataSource);
@@ -74,12 +73,8 @@ public final class EverythingPlusManager {
         this.backgroundClearThread.setDaemon(true);
     }
     
-    private void checkDatabase() {
-        String fileName = EverythingPlusConfig.getInstance().getH2IndexPath() + ".mv.db";
-        File dbFile = new File(fileName);
-        if (dbFile.isFile() && !dbFile.exists()) {
-            DataSourceFactory.initDatabase();
-        }
+    public void initOrResetDatabase() {
+        DataSourceFactory.initDatabase();
     }
     
     public static EverythingPlusManager getInstance() {
@@ -118,6 +113,7 @@ public final class EverythingPlusManager {
      * 索引
      */
     public void buildIndex() {
+        initOrResetDatabase();
         Set<String> directories = EverythingPlusConfig.getInstance().getIncludePath();
         if (this.executorService == null) {
             this.executorService = Executors.newFixedThreadPool(directories.size(), new ThreadFactory() {

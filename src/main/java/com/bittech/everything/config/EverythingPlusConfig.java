@@ -1,6 +1,8 @@
 package com.bittech.everything.config;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.File;
 import java.nio.file.FileSystem;
@@ -15,6 +17,7 @@ import java.util.Set;
  * Description: 比特科技，只为更好的你；你只管学习，其它交给我。
  */
 @Getter
+@ToString
 public class EverythingPlusConfig {
     
     private static volatile EverythingPlusConfig config;
@@ -28,8 +31,19 @@ public class EverythingPlusConfig {
      */
     private Set<String> excludePath = new HashSet<>();
     
+    /**
+     * 检索最大的返回值数量
+     */
+    @Setter
+    private Integer maxReturn = 30;
     
-    //TODO 可配置的参数会在这里体现
+    /**
+     * 深度排序的规则，默认是升序
+     * order by dept asc limit 30 offset 0
+     */
+    @Setter
+    private Boolean deptOrderAsc = true;
+    
     
     /**
      * H2数据库文件路径
@@ -37,7 +51,6 @@ public class EverythingPlusConfig {
     private String h2IndexPath = System.getProperty("user.dir") + File.separator + "everything_plus";
     
     private EverythingPlusConfig() {
-    
     }
     
     private void initDefaultPathsConfig() {
